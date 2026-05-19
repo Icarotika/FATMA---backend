@@ -1,0 +1,81 @@
+{
+  "matrícula": {
+    "descricao": "Processo para ingresso e rematrícula semestral.",
+    "requisitos": [
+      "Documento de identificação com foto",
+      "CPF",
+      "Comprovante de conclusão do ensino médio (para ingressantes)",
+      "Comprovante de pagamento da taxa, quando aplicável"
+    ],
+    "procedimento": [
+      "Acessar o portal acadêmico",
+      "Selecionar disciplinas disponíveis",
+      "Confirmar matrícula",
+      "Baixar comprovante"
+    ]
+  },
+  "trancamento": {
+    "descricao": "Suspensão temporária do vínculo acadêmico.",
+    "regras": [
+      "Permitido após o 1º semestre cursado",
+      "Máximo de 2 semestres de trancamento durante o curso",
+      "Solicitação feita exclusivamente pelo portal"
+    ],
+    "prazo": "Até 30 dias após o início do semestre letivo"
+  },
+  "documentos": {
+    "historico_escolar": {
+      "canal": "Portal acadêmico",
+      "prazo": "Emissão imediata em PDF"
+    },
+    "declaracao_matricula": {
+      "canal": "Portal acadêmico",
+      "prazo": "Emissão imediata em PDF"
+    },
+    "ementa_disciplina": {
+      "canal": "Secretaria presencial ou e-mail institucional",
+      "prazo": "Até 5 dias úteis"
+    }
+  },
+  "prazos": {
+    "rematricula": "01/07 a 15/07",
+    "ajuste_disciplinas": "16/07 a 22/07",
+    "trancamento_semestre": "Até 30 dias após início das aulas",
+    "solicitacao_documentos_especiais": "Até 10 dias úteis"
+  },
+  "informacoes": {
+    "disciplinas": {
+      "COM141": {
+        "professor": "Professor Silas Gutierrez",
+        "materia": "Comunicação e Expressão"
+      },
+      "IAC012": {
+        "professor": "Professor Marcio Galvão Ribeiro",
+        "materia": "Arquitetura e Organização de Computadores"
+      },
+      "IAL027": {
+        "professor": "Professora Carmen Lucia de Bartolo Costa",
+        "materia": "Algoritmos e Lógica de Programação"
+      },
+      "IES036": {
+        "professor": "Professor Josenyr Santos Rosa",
+        "materia": "Engenharia de Software I"
+      },
+      "ISO030": {
+        "professor": "Professor Alexandre Marchiori de Almeida",
+        "materia": "Sistemas Operacionais"
+      },
+      "ING401": {
+        "professor": "Professora Gleiciane Oliveira de Morais",
+        "materia": "Inglês I"
+      },
+      "PDS001": {
+        "professor": "Professor Edson Luiz Parisotto",
+        "materia": "Projeto Integrador em Análise e Desenvolvimento de Sistemas I"
+      }
+    }
+  },
+  "calendário_academico": {
+    "datas_importantes": {}
+  }
+}
