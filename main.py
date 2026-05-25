@@ -113,7 +113,7 @@ def is_negative(text: str) -> bool:
 
 
 async def consultar_openai(prompt_base: str, pergunta: str) -> str | None:
-    api_key = "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"
+    api_key = "nem-te__conto_boy"
     if not api_key:
         return None
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
