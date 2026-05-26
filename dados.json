@@ -2,7 +2,7 @@
   "matrícula": {
     "descricao": "Processo para ingresso e rematrícula semestral.",
     "requisitos": [
-      "Documento de identificação com foto",
+      "Documento de identificação com foto (RG ou CNH)",
       "CPF",
       "Comprovante de conclusão do ensino médio (para ingressantes)",
       "Comprovante de pagamento da taxa, quando aplicável"
@@ -43,39 +43,105 @@
     "trancamento_semestre": "Até 30 dias após início das aulas",
     "solicitacao_documentos_especiais": "Até 10 dias úteis"
   },
+  "transferencia_horario": {
+    "descricao": "Solicitação de transferência de turno ou horário de aula.",
+    "regras": [
+      "Disponível apenas durante o período de ajuste de disciplinas",
+      "Sujeito à disponibilidade de vagas no turno desejado",
+      "Aprovação condicionada à análise da coordenação do curso",
+      "Máximo de uma transferência por semestre letivo"
+    ],
+    "procedimento": [
+      "Protocolar requerimento na secretaria presencial",
+      "Aguardar análise da coordenação (até 5 dias úteis)",
+      "Acompanhar o resultado pelo portal acadêmico ou e-mail institucional"
+    ],
+    "prazo": "Durante o período de ajuste de disciplinas"
+  },
+  "estagio": {
+    "descricao": "Orientações sobre estágio curricular obrigatório e não obrigatório.",
+    "obrigatorio": {
+      "descricao": "Atividade curricular obrigatória prevista na grade do curso.",
+      "carga_horaria": "Conforme grade curricular do curso — consulte a coordenação",
+      "quando_iniciar": "A partir do período indicado na grade curricular do seu curso",
+      "documentos": [
+        "Requerimento de estágio (disponível na secretaria)",
+        "Termo de Compromisso de Estágio (TCE)",
+        "Plano de Atividades assinado pelo supervisor",
+        "Termo de Convênio (para empresas não conveniadas com a Fatec)"
+      ]
+    },
+    "nao_obrigatorio": {
+      "descricao": "Atividade extracurricular que complementa a formação acadêmica.",
+      "requisitos": [
+        "Estar regularmente matriculado",
+        "Carga horária máxima: 6 horas diárias e 30 horas semanais",
+        "Não pode conflitar com horário de aulas"
+      ],
+      "documentos": [
+        "Termo de Compromisso de Estágio (TCE)",
+        "Plano de Atividades"
+      ]
+    },
+    "contato": "Setor de Estágios — presencial ou e-mail institucional"
+  },
+  "calendario_academico": {
+    "descricao": "Datas e eventos importantes do semestre letivo.",
+    "semestre_atual": "2025/2",
+    "datas": {
+      "Início das aulas": "28/07/2025",
+      "Término das aulas": "05/12/2025",
+      "Recesso de outubro": "A confirmar — consulte o portal",
+      "Avaliações parciais": "A confirmar — consulte o portal",
+      "Avaliações finais": "A confirmar — consulte o portal",
+      "Colação de grau": "A confirmar — consulte o portal"
+    },
+    "observacao": "As datas podem sofrer alterações. Acompanhe o calendário oficial no portal acadêmico e no mural da instituição."
+  },
   "informacoes": {
     "disciplinas": {
       "COM141": {
         "professor": "Professor Silas Gutierrez",
-        "materia": "Comunicação e Expressão"
+        "materia": "Comunicação e Expressão",
+        "horario": "-- A PREENCHER --",
+        "sala": "-- A PREENCHER --"
       },
       "IAC012": {
         "professor": "Professor Marcio Galvão Ribeiro",
-        "materia": "Arquitetura e Organização de Computadores"
+        "materia": "Arquitetura e Organização de Computadores",
+        "horario": "-- A PREENCHER --",
+        "sala": "-- A PREENCHER --"
       },
       "IAL027": {
         "professor": "Professora Carmen Lucia de Bartolo Costa",
-        "materia": "Algoritmos e Lógica de Programação"
+        "materia": "Algoritmos e Lógica de Programação",
+        "horario": "-- A PREENCHER --",
+        "sala": "-- A PREENCHER --"
       },
       "IES036": {
         "professor": "Professor Josenyr Santos Rosa",
-        "materia": "Engenharia de Software I"
+        "materia": "Engenharia de Software I",
+        "horario": "-- A PREENCHER --",
+        "sala": "-- A PREENCHER --"
       },
       "ISO030": {
         "professor": "Professor Alexandre Marchiori de Almeida",
-        "materia": "Sistemas Operacionais"
+        "materia": "Sistemas Operacionais",
+        "horario": "-- A PREENCHER --",
+        "sala": "-- A PREENCHER --"
       },
       "ING401": {
         "professor": "Professora Gleiciane Oliveira de Morais",
-        "materia": "Inglês I"
+        "materia": "Inglês I",
+        "horario": "-- A PREENCHER --",
+        "sala": "-- A PREENCHER --"
       },
       "PDS001": {
         "professor": "Professor Edson Luiz Parisotto",
-        "materia": "Projeto Integrador em Análise e Desenvolvimento de Sistemas I"
+        "materia": "Projeto Integrador em Análise e Desenvolvimento de Sistemas I",
+        "horario": "-- A PREENCHER --",
+        "sala": "-- A PREENCHER --"
       }
     }
-  },
-  "calendário_academico": {
-    "datas_importantes": {}
   }
 }
