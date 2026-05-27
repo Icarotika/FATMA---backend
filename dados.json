@@ -37,12 +37,6 @@
       "prazo": "Até 5 dias úteis"
     }
   },
-  "prazos": {
-    "rematricula": "01/07 a 15/07",
-    "ajuste_disciplinas": "16/07 a 22/07",
-    "trancamento_semestre": "Até 30 dias após início das aulas",
-    "solicitacao_documentos_especiais": "Até 10 dias úteis"
-  },
   "transferencia_horario": {
     "descricao": "Solicitação de transferência de turno ou horário de aula.",
     "regras": [
@@ -86,61 +80,370 @@
     "contato": "Setor de Estágios — presencial ou e-mail institucional"
   },
   "calendario_academico": {
-    "descricao": "Datas e eventos importantes do semestre letivo.",
+    "descricao": "Calendário oficial de datas importantes da Fatec Zona Sul.",
     "semestre_atual": "2025/2",
-    "datas": {
-      "Início das aulas": "28/07/2025",
-      "Término das aulas": "05/12/2025",
-      "Recesso de outubro": "A confirmar — consulte o portal",
-      "Avaliações parciais": "A confirmar — consulte o portal",
-      "Avaliações finais": "A confirmar — consulte o portal",
-      "Colação de grau": "A confirmar — consulte o portal"
-    },
-    "observacao": "As datas podem sofrer alterações. Acompanhe o calendário oficial no portal acadêmico e no mural da instituição."
+    "meses": {
+      "janeiro": {
+        "titulo": "Janeiro 2026",
+        "eventos": [
+          "01/01 — Confraternização Universal (feriado)",
+          "05/01 — Prazo final de validação de concluintes de 2025 no SIGA",
+          "12 a 18/01 — Rematrícula de veteranos",
+          "12 a 18/01 — Inscrições para vagas remanescentes e transferências",
+          "19/01 — Divulgação da 1ª chamada do Vestibular Fatec 2026-1",
+          "20 a 22/01 — Matrícula da 1ª chamada",
+          "26/01 — Divulgação da 2ª chamada",
+          "27 a 29/01 — Matrícula da 2ª chamada"
+        ]
+      },
+      "fevereiro": {
+        "titulo": "Fevereiro 2026",
+        "eventos": [
+          "04/02 — Início oficial do 1º semestre letivo",
+          "09/02 — Início das aulas",
+          "09/02 — Acolhimento dos ingressantes",
+          "09/02 — Transferência das vagas remanescentes do Provão Paulista",
+          "14 a 18/02 — Recesso de Carnaval",
+          "19/02 — Prazo para aproveitamento de estudos, reconhecimento de competências e ajustes de matrícula",
+          "23/02 — Cancelamento de matrícula de ingressantes ausentes",
+          "28/02 — Encerramento do sistema remoto de matrícula dos ingressantes"
+        ]
+      },
+      "marco": {
+        "titulo": "Março 2026",
+        "eventos": [
+          "02/03 — Aniversário de 20 anos da Fatec Zona Sul 🎉",
+          "24/03 a 06/04 — Pedidos de isenção/redução da taxa do Vestibular 2026-2",
+          "25/03 — Prazo final para aproveitamento de conhecimentos e experiências anteriores"
+        ]
+      },
+      "abril": {
+        "titulo": "Abril 2026",
+        "eventos": [
+          "03 e 04/04 — Paixão de Cristo (feriado)",
+          "07/04 a 01/06 — Inscrições para o Vestibular Fatec 2026-2",
+          "15/04 — Resultado da isenção/redução da taxa",
+          "20 e 21/04 — Tiradentes e emenda"
+        ]
+      },
+      "maio": {
+        "titulo": "Maio 2026",
+        "eventos": [
+          "01/05 — Dia do Trabalho (feriado)",
+          "13/05 — Prazo final para trancamento de matrícula",
+          "28/05 — Corpus Christi (feriado)",
+          "29/05 — Emenda/recesso acadêmico"
+        ]
+      },
+      "junho": {
+        "titulo": "Junho 2026",
+        "eventos": [
+          "01/06 — Encerramento das inscrições do Vestibular 2026-2",
+          "20/06 — Prazo final para entrega de médias finais",
+          "23/06 — Entrega de médias finais do curso EaD",
+          "24 a 26/06 — Revisão de médias finais (EaD)",
+          "27/06 — Entrega de conteúdos programáticos e frequência",
+          "28/06 — Prova do Vestibular Fatec 2026-2",
+          "29 e 30/06 — Inscrição para exames finais",
+          "30/06 — Divulgação do gabarito oficial"
+        ]
+      },
+      "julho": {
+        "titulo": "Julho 2026",
+        "eventos": [
+          "02 a 08/07 — Aplicação dos exames finais",
+          "08/07 — Prazo para erratas de cursos semestrais",
+          "09/07 — Revolução Constitucionalista (feriado)",
+          "14/07 — Divulgação da 1ª chamada do Vestibular 2026-2",
+          "15 a 17/07 — Matrícula da 1ª chamada",
+          "20/07 — Aviso automático do SIGA para veteranos sem rematrícula",
+          "21/07 — Divulgação da 2ª chamada",
+          "22 a 24/07 — Matrícula da 2ª chamada",
+          "28/07 — Divulgação da 3ª chamada",
+          "29 a 31/07 — Matrícula da 3ª chamada"
+        ]
+      },
+      "agosto": {
+        "titulo": "Agosto 2026",
+        "eventos": [
+          "Início do 2º semestre letivo",
+          "10/08 — Prazo final para aproveitamento de estudos e reconhecimento de competências (DSM)",
+          "24/08 a 11/09 — Pedidos de isenção/redução do Vestibular 2027-1"
+        ]
+      },
+      "setembro": {
+        "titulo": "Setembro 2026",
+        "eventos": [
+          "07/09 — Independência do Brasil (feriado)",
+          "14/09 a 06/11 — Inscrições para o Vestibular Fatec 2027-1",
+          "16/09 — Prazo final para aproveitamento de experiências anteriores"
+        ]
+      },
+      "outubro": {
+        "titulo": "Outubro 2026",
+        "eventos": [
+          "12/10 — Nossa Senhora Aparecida (feriado)",
+          "15/10 — Dia do Professor",
+          "28/10 — Dia do Servidor Público (sem aulas)"
+        ]
+      },
+      "novembro": {
+        "titulo": "Novembro 2026",
+        "eventos": [
+          "02/11 — Finados (feriado)",
+          "15/11 — Proclamação da República (feriado)",
+          "20/11 — Consciência Negra (feriado)",
+          "Encerramento gradual do semestre letivo e avaliações finais"
+        ]
+      },
+      "dezembro": {
+        "titulo": "Dezembro 2026",
+        "eventos": [
+          "Provas finais e fechamento acadêmico",
+          "Divulgação de resultados finais",
+          "Início do recesso acadêmico",
+          "Preparação das matrículas 2027-1"
+        ]
+      }
+    }
   },
   "informacoes": {
     "disciplinas": {
-      "COM141": {
-        "professor": "Professor Silas Gutierrez",
-        "materia": "Comunicação e Expressão",
-        "horario": "-- A PREENCHER --",
-        "sala": "-- A PREENCHER --"
+      "ADS": {
+        "1": {
+          "COM141": {
+            "professor": "Professor Silas Gutierrez",
+            "materia": "Comunicação e Expressão",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          },
+          "IAC012": {
+            "professor": "Professor Marcio Galvão Ribeiro",
+            "materia": "Arquitetura e Organização de Computadores",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          },
+          "IAL027": {
+            "professor": "Professora Carmen Lucia de Bartolo Costa",
+            "materia": "Algoritmos e Lógica de Programação",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          },
+          "IES036": {
+            "professor": "Professor Josenyr Santos Rosa",
+            "materia": "Engenharia de Software I",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          },
+          "ISO030": {
+            "professor": "Professor Alexandre Marchiori de Almeida",
+            "materia": "Sistemas Operacionais",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          },
+          "ING401": {
+            "professor": "Professora Gleiciane Oliveira de Morais",
+            "materia": "Inglês I",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          },
+          "PDS001": {
+            "professor": "Professor Edson Luiz Parisotto",
+            "materia": "Projeto Integrador em Análise e Desenvolvimento de Sistemas I",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "2": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "3": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "4": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "5": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "6": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        }
       },
-      "IAC012": {
-        "professor": "Professor Marcio Galvão Ribeiro",
-        "materia": "Arquitetura e Organização de Computadores",
-        "horario": "-- A PREENCHER --",
-        "sala": "-- A PREENCHER --"
+      "DSM": {
+        "1": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "2": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "3": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "4": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "5": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "6": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        }
       },
-      "IAL027": {
-        "professor": "Professora Carmen Lucia de Bartolo Costa",
-        "materia": "Algoritmos e Lógica de Programação",
-        "horario": "-- A PREENCHER --",
-        "sala": "-- A PREENCHER --"
+      "LOGISTICA": {
+        "1": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "2": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "3": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "4": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "5": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "6": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        }
       },
-      "IES036": {
-        "professor": "Professor Josenyr Santos Rosa",
-        "materia": "Engenharia de Software I",
-        "horario": "-- A PREENCHER --",
-        "sala": "-- A PREENCHER --"
-      },
-      "ISO030": {
-        "professor": "Professor Alexandre Marchiori de Almeida",
-        "materia": "Sistemas Operacionais",
-        "horario": "-- A PREENCHER --",
-        "sala": "-- A PREENCHER --"
-      },
-      "ING401": {
-        "professor": "Professora Gleiciane Oliveira de Morais",
-        "materia": "Inglês I",
-        "horario": "-- A PREENCHER --",
-        "sala": "-- A PREENCHER --"
-      },
-      "PDS001": {
-        "professor": "Professor Edson Luiz Parisotto",
-        "materia": "Projeto Integrador em Análise e Desenvolvimento de Sistemas I",
-        "horario": "-- A PREENCHER --",
-        "sala": "-- A PREENCHER --"
+      "GESTAO": {
+        "1": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "2": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "3": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "4": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "5": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        },
+        "6": {
+          "PLACEHOLDER": {
+            "materia": "-- A PREENCHER --",
+            "professor": "-- A PREENCHER --",
+            "horario": "-- A PREENCHER --",
+            "sala": "-- A PREENCHER --"
+          }
+        }
       }
     }
   }
