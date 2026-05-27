@@ -1,4 +1,7 @@
-"""Backend FATMA v4.1 — Alpha 0.3.1 (patch completo)"""
+"""Backend FATMA v4.2 — Beta 0.4.1
+Matrícula vs Rematrícula separadas.
+MATRICULA_ABERTA (env): false → aviso vestibular 2027-1; true → fluxo tester ativo.
+"""
 from __future__ import annotations
 import json, os, random, re, uuid, unicodedata
 from pathlib import Path
@@ -11,9 +14,13 @@ from pydantic import BaseModel, Field
 BASE_DIR   = Path(__file__).resolve().parent
 DADOS_PATH = BASE_DIR / "dados.json"
 
-app = FastAPI(title="FATMA", version="4.1.0")
+app = FastAPI(title="FATMA", version="4.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
                    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+# ── Feature flag: inscrições para o Vestibular abertas? ───────────────────────
+# Para ativar o modo tester, defina a variável de ambiente:  MATRICULA_ABERTA=true
+MATRICULA_ABERTA: bool = os.getenv("MATRICULA_ABERTA", "false").lower() == "true"
 
 # ── Models ────────────────────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
@@ -46,7 +53,8 @@ def ok(msg: str, sid: str, mode: str = "conversacional") -> ChatResponse:
 
 MENU_AJUDA = (
     "Claro! Posso te ajudar com:\n\n"
-    "📋 Matrícula e rematrícula\n"
+    "📋 Matrícula (inscrição no vestibular)\n"
+    "🔁 Rematrícula (alunos veteranos)\n"
     "🔒 Trancamento de curso\n"
     "📄 Documentos acadêmicos\n"
     "🔄 Transferência de horário\n"
@@ -223,23 +231,11 @@ async def chat(request: ChatRequest) -> ChatResponse:
     session["expects_more"] = False  # limpa se o usuário disse outra coisa
 
     # =========================================================================
-    # FLUXO: MATRÍCULA
+    # FLUXO: MATRÍCULA (inscrição no Vestibular FATEC)
     # =========================================================================
+    # Estados: matricula.course → matricula.turno → matricula.confirm_data
     if state.startswith("matricula."):
         step = state.split(".",1)[1]
-
-        if step == "await_confirm":
-            if is_affirmative(p):
-                requisitos = dados.get("matrícula",{}).get("requisitos",[])
-                lines = ["Ótimo! Antes de iniciarmos, reúna os seguintes documentos:\n"]
-                for r in requisitos: lines.append(f"• {r}")
-                lines.append(MENU_CURSOS)
-                session["state"] = "matricula.course"
-                return ok(fmt(lines), sid)
-            if is_negative(p):
-                session["state"] = "idle"
-                return ok("Tudo bem! Quando quiser retomamos. Posso ajudar em outra coisa?", sid)
-            return ok("Deseja iniciar o processo de matrícula agora? (sim/não)", sid)
 
         if step == "course":
             ck = detectar_curso(p)
@@ -247,19 +243,20 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 return ok("Não reconheci o curso. Por favor, escolha:" + MENU_CURSOS, sid)
             ctx["curso_key"]  = ck
             ctx["curso_nome"] = CURSOS[ck]["nome"]
+            # DSM tem turno único — pula a pergunta
             if len(CURSOS[ck]["turnos"]) == 1:
                 turno_unico = CURSOS[ck]["turnos"][0]
                 ctx["turno"] = turno_unico
                 session["state"] = "matricula.confirm_data"
                 return ok(
-                    f"Curso: {ctx['curso_nome']}\n"
-                    f"O único turno disponível para este curso é o {turno_unico.capitalize()}.\n\n"
-                    f"Confirmar matrícula em {ctx['curso_nome']} — {turno_unico.capitalize()}? (sim/não)", sid)
+                    f"Curso selecionado: {ctx['curso_nome']}\n"
+                    f"Turno único disponível: {turno_unico.capitalize()}\n\n"
+                    f"Confirmar inscrição para {ctx['curso_nome']} — {turno_unico.capitalize()}? (sim/não)", sid)
             session["state"] = "matricula.turno"
             return ok(
                 f"Curso: {ctx['curso_nome']} ✅\n\n"
                 f"Turnos disponíveis: {CURSOS[ck]['turnos_msg']}\n"
-                "Qual turno você prefere?", sid)
+                "Qual período você prefere?", sid)
 
         if step == "turno":
             tk = detectar_turno(p)
@@ -267,12 +264,14 @@ async def chat(request: ChatRequest) -> ChatResponse:
             turnos_ok = CURSOS.get(ck,{}).get("turnos",[])
             if not tk or tk not in turnos_ok:
                 return ok(
-                    f"Turno '{tk or 'informado'}' não disponível para {ctx.get('curso_nome','este curso')}.\n"
-                    f"Turnos válidos: {CURSOS.get(ck,{}).get('turnos_msg','')}\n\nQual prefere?", sid)
+                    f"Período '{tk or 'informado'}' não disponível para {ctx.get('curso_nome','este curso')}.\n"
+                    f"Opções válidas: {CURSOS.get(ck,{}).get('turnos_msg','')}\n\nQual prefere?", sid)
             ctx["turno"] = tk
             session["state"] = "matricula.confirm_data"
             return ok(
-                f"Confirmando:\n📚 Curso: {ctx['curso_nome']}\n🕐 Turno: {tk.capitalize()}\n\n"
+                f"Perfeito! Confirmando a inscrição:\n\n"
+                f"📚 Curso: {ctx['curso_nome']}\n"
+                f"🕐 Período: {tk.capitalize()}\n\n"
                 "Os dados estão corretos? (sim/não)", sid)
 
         if step == "confirm_data":
@@ -281,17 +280,95 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 session["context"] = {}
                 session["expects_more"] = True
                 return ok(
-                    f"✅ Solicitação de matrícula registrada!\n\n"
+                    f"✅ Inscrição para o Vestibular registrada!\n\n"
                     f"📋 Resumo:\n"
                     f"• Curso: {ctx.get('curso_nome','')}\n"
-                    f"• Turno: {ctx.get('turno','').capitalize()}\n\n"
-                    "Em breve você receberá um e-mail com as próximas instruções. "
-                    "Posso ajudar com mais alguma coisa?", sid)
+                    f"• Período: {ctx.get('turno','').capitalize()}\n\n"
+                    "Agora é aguardar a data da prova e ficar atento às "
+                    "comunicações pelo portal e e-mail institucional.\n\n"
+                    "Boa sorte no vestibular! 🍀 Posso ajudar com mais alguma coisa?", sid)
             if is_negative(p):
                 session["state"] = "matricula.course"
                 ctx.clear()
                 return ok("Sem problema! Vamos recomeçar.\n" + MENU_CURSOS, sid)
             return ok("Os dados estão corretos? (sim/não)", sid)
+
+    # =========================================================================
+    # FLUXO: REMATRÍCULA (alunos veteranos já com RA)
+    # =========================================================================
+    # Estados: rematricula.ra → rematricula.curso → rematricula.turno → rematricula.confirm
+    if state.startswith("rematricula."):
+        step = state.split(".",1)[1]
+
+        if step == "ra":
+            ra = re.sub(r"\D","",pergunta)
+            if len(ra) < 5:
+                return ok(
+                    "Não consegui identificar o RA. Por favor, informe apenas os números "
+                    "(ex: 1234567890123).", sid)
+            ctx["ra"] = ra
+            session["state"] = "rematricula.curso"
+            return ok(
+                f"RA {ra} localizado. ✅\n\n"
+                "Agora confirme o curso em que você está matriculado:" + MENU_CURSOS, sid)
+
+        if step == "curso":
+            ck = detectar_curso(p)
+            if not ck:
+                return ok("Não reconheci o curso. Por favor, escolha:" + MENU_CURSOS, sid)
+            ctx["curso_key"]  = ck
+            ctx["curso_nome"] = CURSOS[ck]["nome"]
+            # DSM tem turno único — pula confirmação de turno
+            if len(CURSOS[ck]["turnos"]) == 1:
+                turno_unico = CURSOS[ck]["turnos"][0]
+                ctx["turno"] = turno_unico
+                session["state"] = "rematricula.confirm"
+                return ok(
+                    f"Curso: {ctx['curso_nome']}\n"
+                    f"Período: {turno_unico.capitalize()} (único disponível para este curso)\n\n"
+                    "Deseja confirmar a rematrícula? (sim/não)", sid)
+            session["state"] = "rematricula.turno"
+            return ok(
+                f"Curso confirmado: {ctx['curso_nome']} ✅\n\n"
+                f"Qual é o seu período atual? ({CURSOS[ck]['turnos_msg']})", sid)
+
+        if step == "turno":
+            tk = detectar_turno(p)
+            ck = ctx.get("curso_key","")
+            turnos_ok = CURSOS.get(ck,{}).get("turnos",[])
+            if not tk or tk not in turnos_ok:
+                return ok(
+                    f"Período não reconhecido para {ctx.get('curso_nome','este curso')}.\n"
+                    f"Opções: {CURSOS.get(ck,{}).get('turnos_msg','')}", sid)
+            ctx["turno"] = tk
+            session["state"] = "rematricula.confirm"
+            return ok(
+                f"Confirmando os dados da rematrícula:\n\n"
+                f"🪪 RA: {ctx.get('ra')}\n"
+                f"📚 Curso: {ctx['curso_nome']}\n"
+                f"🕐 Período: {tk.capitalize()}\n\n"
+                "Deseja confirmar a rematrícula? (sim/não)", sid)
+
+        if step == "confirm":
+            if is_affirmative(p):
+                session["state"] = "idle"
+                session["context"] = {}
+                session["expects_more"] = True
+                return ok(
+                    f"✅ Rematrícula realizada com sucesso!\n\n"
+                    f"📋 Confirmação:\n"
+                    f"• RA: {ctx.get('ra')}\n"
+                    f"• Curso: {ctx.get('curso_nome','')}\n"
+                    f"• Período: {ctx.get('turno','').capitalize()}\n\n"
+                    "Você receberá a confirmação pelo portal acadêmico. "
+                    "Bom semestre! 📘 Posso ajudar com mais alguma coisa?", sid)
+            if is_negative(p):
+                session["state"] = "idle"
+                session["context"] = {}
+                return ok(
+                    "Rematrícula cancelada. Se precisar de ajuda com qualquer outro assunto, "
+                    "é só chamar!", sid)
+            return ok("Deseja confirmar a rematrícula? (sim/não)", sid)
 
     # =========================================================================
     # FLUXO: TRANCAMENTO
@@ -518,14 +595,32 @@ async def chat(request: ChatRequest) -> ChatResponse:
     # DETECÇÃO DE INTENÇÃO (estado idle)
     # =========================================================================
 
-    # Matrícula
-    if any(k in p for k in ["matricula","rematricula"]):
-        proc = dados.get("matrícula",{}).get("procedimento",[])
-        lines = ["Veja como funciona o processo de matrícula:\n"]
-        for i,s in enumerate(proc,1): lines.append(f"{i}. {s}")
-        lines.append("\nDeseja que eu te ajude a iniciar o processo? (sim/não)")
-        session["state"] = "matricula.await_confirm"
-        return ok(fmt(lines), sid)
+    # Matrícula — inscrição no Vestibular (separada da Rematrícula)
+    if "matricula" in p and "rematricula" not in p:
+        if not MATRICULA_ABERTA:
+            return ok(
+                "📋 Matrícula na FATEC — Vestibular\n\n"
+                "As inscrições para o Vestibular FATEC 2026-2 foram encerradas.\n\n"
+                "Para ingressar na Fatec Zona Sul, você precisará aguardar as "
+                "inscrições para o Vestibular 2027-1, com previsão de abertura "
+                "em setembro de 2026 — confira o calendário acadêmico para as datas exatas.\n\n"
+                "📌 Fique atento ao site oficial da FATEC e ao portal acadêmico "
+                "para não perder o prazo de inscrição!\n\n"
+                "Já é aluno e quer fazer a rematrícula? É só digitar 'rematrícula'.", sid)
+        # ── TESTER MODE: inscrições abertas ──────────────────────────────────
+        session["state"] = "matricula.course"
+        return ok(
+            "📋 Inscrição para o Vestibular FATEC — Modo Tester\n\n"
+            "As inscrições estão abertas! Vamos iniciar a sua inscrição.\n\n"
+            "Qual curso você deseja cursar?" + MENU_CURSOS, sid)
+
+    # Rematrícula — alunos veteranos com RA
+    if "rematricula" in p:
+        session["state"] = "rematricula.ra"
+        return ok(
+            "🔁 Rematrícula — Alunos Veteranos\n\n"
+            "Vou te ajudar com a rematrícula. Vamos começar pela identificação.\n\n"
+            "Por favor, informe seu RA (Registro Acadêmico):", sid)
 
     # Trancamento
     if any(k in p for k in ["trancamento","trancar"]):
