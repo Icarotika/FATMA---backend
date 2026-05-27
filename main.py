@@ -53,14 +53,14 @@ def ok(msg: str, sid: str, mode: str = "conversacional") -> ChatResponse:
 
 MENU_AJUDA = (
     "Claro! Posso te ajudar com:\n\n"
-    "📋 Matrícula (inscrição no vestibular)\n"
-    "🔁 Rematrícula (alunos veteranos)\n"
-    "🔒 Trancamento de curso\n"
-    "📄 Documentos acadêmicos\n"
-    "🔄 Transferência de horário\n"
-    "📅 Calendário acadêmico\n"
-    "🎓 Orientações sobre estágio\n"
-    "📚 Disciplinas e professores\n\n"
+    "- Matrícula (inscrição no vestibular)\n"
+    "- Rematrícula (alunos veteranos)\n"
+    "- Trancamento de curso\n"
+    "- Documentos acadêmicos\n"
+    "- Transferência de horário\n"
+    "- Calendário acadêmico\n"
+    "- Orientações sobre estágio\n"
+    "- Disciplinas e professores\n\n"
     "O que você precisa?"
 )
 
@@ -286,7 +286,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     f"• Período: {ctx.get('turno','').capitalize()}\n\n"
                     "Agora é aguardar a data da prova e ficar atento às "
                     "comunicações pelo portal e e-mail institucional.\n\n"
-                    "Boa sorte no vestibular! 🍀 Posso ajudar com mais alguma coisa?", sid)
+                    "Boa sorte no vestibular!  Posso ajudar com mais alguma coisa?", sid)
             if is_negative(p):
                 session["state"] = "matricula.course"
                 ctx.clear()
@@ -418,9 +418,9 @@ async def chat(request: ChatRequest) -> ChatResponse:
         session["expects_more"] = True
         return ok(
             f"Solicitação registrada para o RA {ra}.\n\n"
-            "📄 Histórico Escolar e Declaração de Matrícula:\n"
+            " Histórico Escolar e Declaração de Matrícula:\n"
             "→ Portal acadêmico — emissão imediata em PDF.\n\n"
-            "📋 Ementa de Disciplina:\n"
+            " Ementa de Disciplina:\n"
             "→ Secretaria presencial ou e-mail. Prazo: até 5 dias úteis.\n\n"
             "Posso ajudar com mais alguma coisa?", sid)
 
@@ -490,31 +490,31 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if state == "estagio.await_tipo":
         if any(k in p for k in ["obrigatorio","obrigatório","curricular","1"]):
             info = dados.get("estagio",{}).get("obrigatorio",{})
-            lines = ["📋 Estágio Obrigatório (Curricular):\n",
+            lines = [" Estágio Obrigatório (Curricular):\n",
                      f"• Carga horária: {info.get('carga_horaria','')}",
                      f"• Início: {info.get('quando_iniciar','')}",
                      "\nDocumentos necessários:"]
             for d in info.get("documentos",[]): lines.append(f"  – {d}")
-            lines.append(f"\n📧 {dados.get('estagio',{}).get('contato','secretaria')}")
+            lines.append(f"\n {dados.get('estagio',{}).get('contato','secretaria')}")
             lines.append("\nPosso ajudar com mais alguma coisa?")
             session["state"] = "idle"
             session["expects_more"] = True
             return ok(fmt(lines), sid)
         if any(k in p for k in ["nao obrigatorio","não obrigatório","extracurricular","voluntario","2"]):
             info = dados.get("estagio",{}).get("nao_obrigatorio",{})
-            lines = ["📋 Estágio Não Obrigatório (Extracurricular):\n","Requisitos:"]
+            lines = [" Estágio Não Obrigatório (Extracurricular):\n","Requisitos:"]
             for r in info.get("requisitos",[]): lines.append(f"  – {r}")
             lines.append("\nDocumentos necessários:")
             for d in info.get("documentos",[]): lines.append(f"  – {d}")
-            lines.append(f"\n📧 {dados.get('estagio',{}).get('contato','secretaria')}")
+            lines.append(f"\n {dados.get('estagio',{}).get('contato','secretaria')}")
             lines.append("\nPosso ajudar com mais alguma coisa?")
             session["state"] = "idle"
             session["expects_more"] = True
             return ok(fmt(lines), sid)
         return ok(
             "Você quer informações sobre:\n\n"
-            "1️⃣ Estágio Obrigatório (curricular)\n"
-            "2️⃣ Estágio Não Obrigatório (extracurricular)\n\n"
+            "1. Estágio Obrigatório (curricular)\n"
+            "2. Estágio Não Obrigatório (extracurricular)\n\n"
             "Digite 1, 2 ou o nome do tipo.", sid)
 
     # =========================================================================
@@ -576,7 +576,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 f"As disciplinas do {sem}º semestre de {CURSOS.get(ck,{}).get('nome',ck)} "
                 "ainda não foram cadastradas.\nConsulte a coordenação do curso.\n\n"
                 "Posso ajudar com mais alguma coisa?", sid)
-        lines = [f"📚 {sem}º Semestre — {CURSOS.get(ck,{}).get('nome',ck)}\n"]
+        lines = [f" {sem}º Semestre — {CURSOS.get(ck,{}).get('nome',ck)}\n"]
         for cod, info in validas.items():
             materia   = info.get("materia", cod)
             professor = info.get("professor","A informar")
@@ -599,7 +599,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if "matricula" in p and "rematricula" not in p:
         if not MATRICULA_ABERTA:
             return ok(
-                "📋 Matrícula na FATEC — Vestibular\n\n"
+                " Matrícula na FATEC — Vestibular\n\n"
                 "As inscrições para o Vestibular FATEC 2026-2 foram encerradas.\n\n"
                 "Para ingressar na Fatec Zona Sul, você precisará aguardar as "
                 "inscrições para o Vestibular 2027-1, com previsão de abertura "
@@ -610,7 +610,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         # ── TESTER MODE: inscrições abertas ──────────────────────────────────
         session["state"] = "matricula.course"
         return ok(
-            "📋 Inscrição para o Vestibular FATEC — Modo Tester\n\n"
+            " Inscrição para o Vestibular FATEC — Modo Tester\n\n"
             "As inscrições estão abertas! Vamos iniciar a sua inscrição.\n\n"
             "Qual curso você deseja cursar?" + MENU_CURSOS, sid)
 
@@ -618,7 +618,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if "rematricula" in p:
         session["state"] = "rematricula.ra"
         return ok(
-            "🔁 Rematrícula — Alunos Veteranos\n\n"
+            " Rematrícula — Alunos Veteranos\n\n"
             "Vou te ajudar com a rematrícula. Vamos começar pela identificação.\n\n"
             "Por favor, informe seu RA (Registro Acadêmico):", sid)
 
@@ -644,7 +644,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             nome  = nomes.get(key, key.replace("_"," ").capitalize())
             canal = val.get("canal","") if isinstance(val,dict) else ""
             prazo = val.get("prazo","") if isinstance(val,dict) else ""
-            lines += [f"📄 {nome}", f"   Canal: {canal}", f"   Prazo: {prazo}\n"]
+            lines += [f" {nome}", f"   Canal: {canal}", f"   Prazo: {prazo}\n"]
         lines.append("Deseja instruções para solicitar? (sim/não)")
         session["state"] = "documentos.await_confirm"
         return ok(fmt(lines), sid)
@@ -664,7 +664,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if any(k in p for k in ["calendario","calend","datas","data importante"]):
         session["state"] = "calendario.await_mes"
         return ok(
-            "📅 Calendário Acadêmico da Fatec Zona Sul\n\n"
+            " Calendário Acadêmico da Fatec Zona Sul\n\n"
             "Tenho as datas de Janeiro a Dezembro de 2026.\n\n"
             "Qual mês você deseja consultar?", sid)
 
@@ -673,8 +673,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         info = dados.get("estagio",{})
         lines = [f"🎓 {info.get('descricao','Estágios')}\n",
                  "Você quer informações sobre:\n",
-                 "1️⃣ Estágio Obrigatório (curricular)",
-                 "2️⃣ Estágio Não Obrigatório (extracurricular)\n",
+                 "1. Estágio Obrigatório (curricular)",
+                 "2. Estágio Não Obrigatório (extracurricular)\n",
                  "Digite 1, 2 ou o nome do tipo."]
         session["state"] = "estagio.await_tipo"
         return ok(fmt(lines), sid)
