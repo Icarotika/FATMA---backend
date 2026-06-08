@@ -1,6 +1,7 @@
-"""Backend FATMA v4.2 — Beta 0.4.1
+"""Backend FATMA v5.0 — Beta 0.5.0
+Motor LLM open source integrado (Ollama / Groq / HuggingFace).
 Matrícula vs Rematrícula separadas.
-MATRICULA_ABERTA (env): false → aviso vestibular 2027-1; true → fluxo tester ativo.
+MATRICULA_ABERTA (env): false → aviso vestibular 2027-1; true → fluxo tester.
 """
 from __future__ import annotations
 import json, os, random, re, uuid, unicodedata
@@ -53,14 +54,14 @@ def ok(msg: str, sid: str, mode: str = "conversacional") -> ChatResponse:
 
 MENU_AJUDA = (
     "Claro! Posso te ajudar com:\n\n"
-    "- Matrícula (inscrição no vestibular)\n"
-    "- Rematrícula (alunos veteranos)\n"
-    "- Trancamento de curso\n"
-    "- Documentos acadêmicos\n"
-    "- Transferência de horário\n"
-    "- Calendário acadêmico\n"
-    "- Orientações sobre estágio\n"
-    "- Disciplinas e professores\n\n"
+    "Matrícula (inscrição no vestibular)\n"
+    "Rematrícula (alunos veteranos)\n"
+    "Trancamento de curso\n"
+    "Documentos acadêmicos\n"
+    "Transferência de horário\n"
+    "Calendário acadêmico\n"
+    "Orientações sobre estágio\n"
+    "Disciplinas e professores\n\n"
     "O que você precisa?"
 )
 
@@ -163,25 +164,142 @@ def buscar_disc_global(p: str, all_disc: dict) -> tuple[str,dict,str,str] | None
                 if any(w in p for w in palavras): return cod, info, curso, sem
     return None
 
-# ── Anthropic fallback ────────────────────────────────────────────────────────
-async def consultar_claude(contexto: str, pergunta: str) -> str | None:
-    api_key = os.getenv("ANTHROPIC_API_KEY","")
-    if not api_key: return None
-    headers = {"x-api-key":api_key,"anthropic-version":"2023-06-01","Content-Type":"application/json"}
-    system = (
-        "Você é FATMA, assistente acadêmica virtual da Fatec Zona Sul. "
-        "Responda sempre em português, de forma clara e amigável. "
-        "Use apenas as informações do contexto abaixo.\n\nCONTEXTO:\n" + contexto
+# ── LLM Open Source — configuração por variável de ambiente ──────────────────
+# LLM_PROVIDER: "ollama" | "groq" | "huggingface"  (padrão: ollama)
+# Veja PLANO_LLM.md para instruções completas de setup.
+
+LLM_PROVIDER  = os.getenv("LLM_PROVIDER",  "ollama")
+OLLAMA_URL    = os.getenv("OLLAMA_URL",    "http://localhost:11434")
+OLLAMA_MODEL  = os.getenv("OLLAMA_MODEL",  "qwen2.5:7b")
+GROQ_API_KEY  = os.getenv("GROQ_API_KEY",  "")
+GROQ_MODEL    = os.getenv("GROQ_MODEL",    "llama-3.1-8b-instant")
+HF_API_KEY    = os.getenv("HF_API_KEY",    "")
+HF_MODEL      = os.getenv("HF_MODEL",      "mistralai/Mistral-7B-Instruct-v0.3")
+
+LLM_TEMPERATURE = 0.3   # baixo = mais factual, menos criativo
+LLM_MAX_TOKENS  = 600
+LLM_HISTORY_MAX = 8     # últimas 4 trocas (user + assistant)
+
+
+def _build_system_prompt(dados: dict) -> str:
+    """Constrói o system prompt com identidade + base de conhecimento (RAG simples)."""
+    ctx = json.dumps(dados, ensure_ascii=False, indent=2)
+    return (
+        "Você é FATMA, assistente acadêmica virtual da Fatec Zona Sul — São Paulo.\n"
+        "Responda sempre em português brasileiro, de forma clara, simpática e objetiva.\n"
+        "Nunca invente informações. Se não souber, sugira contato com a secretaria.\n"
+        "Respostas devem ter no máximo 3 parágrafos, a menos que o usuário peça mais detalhes.\n\n"
+        "=== BASE DE CONHECIMENTO OFICIAL ===\n"
+        f"{ctx}\n"
+        "=====================================\n\n"
+        "Regras:\n"
+        "- Para fatos (datas, professores, prazos, documentos): use SOMENTE a base acima.\n"
+        "- Para assuntos gerais (vida acadêmica, tecnologia, dúvidas comuns): responda "
+        "com seu conhecimento geral, mas deixe claro quando não é dado oficial da Fatec.\n"
+        "- Mantenha sempre tom institucional, acolhedor e profissional.\n"
+        "- Nunca mencione que você é um LLM ou modelo de linguagem — você é a FATMA."
     )
-    payload = {"model":"claude-haiku-4-5-20251001","max_tokens":512,"system":system,
-                "messages":[{"role":"user","content":pergunta}]}
+
+
+async def _ollama_chat(system: str, pergunta: str, history: list[dict]) -> str | None:
+    """Chama o Ollama local — gratuito, open source, roda em CPU."""
+    url = f"{OLLAMA_URL}/api/chat"
+    messages = [{"role": "system", "content": system}]
+    messages.extend(history[-LLM_HISTORY_MAX:])
+    messages.append({"role": "user", "content": pergunta})
+    payload = {
+        "model":   OLLAMA_MODEL,
+        "messages": messages,
+        "stream":  False,
+        "options": {"temperature": LLM_TEMPERATURE, "num_predict": LLM_MAX_TOKENS},
+    }
     try:
-        async with httpx.AsyncClient(timeout=20.0) as c:
-            r = await c.post("https://api.anthropic.com/v1/messages",headers=headers,json=payload)
+        async with httpx.AsyncClient(timeout=60.0) as c:
+            r = await c.post(url, json=payload)
             r.raise_for_status()
-            return r.json()["content"][0]["text"].strip()
+            return r.json()["message"]["content"].strip()
     except Exception:
         return None
+
+
+async def _groq_chat(system: str, pergunta: str, history: list[dict]) -> str | None:
+    """Chama a API gratuita do Groq — serve modelos open source (Llama, Mixtral)."""
+    if not GROQ_API_KEY:
+        return None
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+    messages = [{"role": "system", "content": system}]
+    messages.extend(history[-LLM_HISTORY_MAX:])
+    messages.append({"role": "user", "content": pergunta})
+    payload = {
+        "model":       GROQ_MODEL,
+        "messages":    messages,
+        "temperature": LLM_TEMPERATURE,
+        "max_tokens":  LLM_MAX_TOKENS,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as c:
+            r = await c.post(url, headers=headers, json=payload)
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"].strip()
+    except Exception:
+        return None
+
+
+async def _hf_chat(system: str, pergunta: str, history: list[dict]) -> str | None:
+    """Chama a HuggingFace Inference API (camada gratuita) — fallback cloud."""
+    if not HF_API_KEY:
+        return None
+    url = f"https://api-inference.huggingface.co/models/{HF_MODEL}/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {HF_API_KEY}", "Content-Type": "application/json"}
+    messages = [{"role": "system", "content": system}]
+    messages.extend(history[-LLM_HISTORY_MAX:])
+    messages.append({"role": "user", "content": pergunta})
+    payload = {
+        "model":       HF_MODEL,
+        "messages":    messages,
+        "temperature": LLM_TEMPERATURE,
+        "max_tokens":  LLM_MAX_TOKENS,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as c:
+            r = await c.post(url, headers=headers, json=payload)
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"].strip()
+    except Exception:
+        return None
+
+
+async def consultar_llm(dados: dict, pergunta: str, history: list[dict]) -> str | None:
+    """
+    Motor LLM principal — tenta o provider configurado e faz fallback automático.
+    Ordem: provider configurado → groq → huggingface → None
+    """
+    system = _build_system_prompt(dados)
+
+    # Provider primário configurado
+    if LLM_PROVIDER == "groq":
+        resultado = await _groq_chat(system, pergunta, history)
+    elif LLM_PROVIDER == "huggingface":
+        resultado = await _hf_chat(system, pergunta, history)
+    else:  # "ollama" ou qualquer outro → tenta ollama
+        resultado = await _ollama_chat(system, pergunta, history)
+
+    if resultado:
+        return resultado
+
+    # Fallback automático entre providers
+    if LLM_PROVIDER != "groq" and GROQ_API_KEY:
+        resultado = await _groq_chat(system, pergunta, history)
+        if resultado:
+            return resultado
+
+    if LLM_PROVIDER != "huggingface" and HF_API_KEY:
+        resultado = await _hf_chat(system, pergunta, history)
+        if resultado:
+            return resultado
+
+    return None
 
 # ── Endpoint ──────────────────────────────────────────────────────────────────
 @app.post("/chat", response_model=ChatResponse)
@@ -194,14 +312,15 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(500, "dados.json inválido")
 
     sid     = request.session_id or uuid.uuid4().hex
-    session = SESSIONS.setdefault(sid, {"state":"idle","context":{}})
+    session = SESSIONS.setdefault(sid, {"state":"idle","context":{},"history":[]})
     pergunta = request.pergunta.strip()
     p       = normalizar(pergunta)
     state   = session.get("state","idle")
     ctx     = session["context"]
+    history = session.setdefault("history", [])
 
     # =========================================================================
-    # 🥚 EASTER EGGS — checados antes de qualquer fluxo
+    #  EASTER EGGS — checados antes de qualquer fluxo
     # =========================================================================
 
     # Easter egg secreto: palavras-chave especiais → link imediato
@@ -216,9 +335,9 @@ async def chat(request: ChatRequest) -> ChatResponse:
                "me ama","você me ama","me namora","namorada","beijo","casamento comigo"]
     if any(k in p for k in ROMANCE):
         return ok(
-            "Que gostos estranhos você tem! 😂\n\n"
+            "Que gostos estranhos você tem! \n\n"
             "Jamais teria relações sentimentais com um mero humano. "
-            "Mas posso ajudar com assuntos acadêmicos — esse sim é o meu domínio! 💜",
+            "Mas posso ajudar com assuntos acadêmicos — esse sim é o meu domínio! ",
             sid
         )
 
@@ -254,7 +373,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     f"Confirmar inscrição para {ctx['curso_nome']} — {turno_unico.capitalize()}? (sim/não)", sid)
             session["state"] = "matricula.turno"
             return ok(
-                f"Curso: {ctx['curso_nome']} ✅\n\n"
+                f"Curso: {ctx['curso_nome']} \n\n"
                 f"Turnos disponíveis: {CURSOS[ck]['turnos_msg']}\n"
                 "Qual período você prefere?", sid)
 
@@ -270,8 +389,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
             session["state"] = "matricula.confirm_data"
             return ok(
                 f"Perfeito! Confirmando a inscrição:\n\n"
-                f"📚 Curso: {ctx['curso_nome']}\n"
-                f"🕐 Período: {tk.capitalize()}\n\n"
+                f"Curso: {ctx['curso_nome']}\n"
+                f"Período: {tk.capitalize()}\n\n"
                 "Os dados estão corretos? (sim/não)", sid)
 
         if step == "confirm_data":
@@ -280,8 +399,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 session["context"] = {}
                 session["expects_more"] = True
                 return ok(
-                    f"✅ Inscrição para o Vestibular registrada!\n\n"
-                    f"📋 Resumo:\n"
+                    f"Inscrição para o Vestibular registrada!\n\n"
+                    f"Resumo:\n"
                     f"• Curso: {ctx.get('curso_nome','')}\n"
                     f"• Período: {ctx.get('turno','').capitalize()}\n\n"
                     "Agora é aguardar a data da prova e ficar atento às "
@@ -309,7 +428,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             ctx["ra"] = ra
             session["state"] = "rematricula.curso"
             return ok(
-                f"RA {ra} localizado. ✅\n\n"
+                f"RA {ra} localizado. \n\n"
                 "Agora confirme o curso em que você está matriculado:" + MENU_CURSOS, sid)
 
         if step == "curso":
@@ -329,7 +448,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     "Deseja confirmar a rematrícula? (sim/não)", sid)
             session["state"] = "rematricula.turno"
             return ok(
-                f"Curso confirmado: {ctx['curso_nome']} ✅\n\n"
+                f"Curso confirmado: {ctx['curso_nome']} \n\n"
                 f"Qual é o seu período atual? ({CURSOS[ck]['turnos_msg']})", sid)
 
         if step == "turno":
@@ -344,9 +463,9 @@ async def chat(request: ChatRequest) -> ChatResponse:
             session["state"] = "rematricula.confirm"
             return ok(
                 f"Confirmando os dados da rematrícula:\n\n"
-                f"🪪 RA: {ctx.get('ra')}\n"
-                f"📚 Curso: {ctx['curso_nome']}\n"
-                f"🕐 Período: {tk.capitalize()}\n\n"
+                f"RA: {ctx.get('ra')}\n"
+                f"Curso: {ctx['curso_nome']}\n"
+                f"Período: {tk.capitalize()}\n\n"
                 "Deseja confirmar a rematrícula? (sim/não)", sid)
 
         if step == "confirm":
@@ -355,13 +474,13 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 session["context"] = {}
                 session["expects_more"] = True
                 return ok(
-                    f"✅ Rematrícula realizada com sucesso!\n\n"
-                    f"📋 Confirmação:\n"
+                    f"Rematrícula realizada com sucesso!\n\n"
+                    f"Confirmação:\n"
                     f"• RA: {ctx.get('ra')}\n"
                     f"• Curso: {ctx.get('curso_nome','')}\n"
                     f"• Período: {ctx.get('turno','').capitalize()}\n\n"
                     "Você receberá a confirmação pelo portal acadêmico. "
-                    "Bom semestre! 📘 Posso ajudar com mais alguma coisa?", sid)
+                    "Bom semestre!  Posso ajudar com mais alguma coisa?", sid)
             if is_negative(p):
                 session["state"] = "idle"
                 session["context"] = {}
@@ -395,7 +514,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             "Para concluir:\n1. Acesse o portal acadêmico\n"
             "2. Vá em Secretaria → Trancamento de Matrícula\n"
             "3. Confirme a solicitação\n\n"
-            f"⚠️ Prazo: {prazo}\n\nPosso ajudar com mais alguma coisa?", sid)
+            f"Prazo: {prazo}\n\nPosso ajudar com mais alguma coisa?", sid)
 
     # =========================================================================
     # FLUXO: DOCUMENTOS
@@ -418,9 +537,9 @@ async def chat(request: ChatRequest) -> ChatResponse:
         session["expects_more"] = True
         return ok(
             f"Solicitação registrada para o RA {ra}.\n\n"
-            " Histórico Escolar e Declaração de Matrícula:\n"
+            "Histórico Escolar e Declaração de Matrícula:\n"
             "→ Portal acadêmico — emissão imediata em PDF.\n\n"
-            " Ementa de Disciplina:\n"
+            "Ementa de Disciplina:\n"
             "→ Secretaria presencial ou e-mail. Prazo: até 5 dias úteis.\n\n"
             "Posso ajudar com mais alguma coisa?", sid)
 
@@ -442,7 +561,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             return ok("Não consegui identificar o RA. Informe apenas os números.", sid)
         ctx["ra"] = ra
         session["state"] = "trhorario.turno_atual"
-        return ok(f"RA {ra} registrado. ✅\n\nQual é o seu turno atual? (Matutino / Vespertino / Noturno)", sid)
+        return ok(f"RA {ra} registrado. \n\nQual é o seu turno atual? (Matutino / Vespertino / Noturno)", sid)
 
     if state == "trhorario.turno_atual":
         tk = detectar_turno(p)
@@ -450,7 +569,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             return ok("Não reconheci o turno. Informe: Matutino, Vespertino ou Noturno.", sid)
         ctx["turno_atual"] = tk
         session["state"] = "trhorario.turno_desejado"
-        return ok(f"Turno atual: {tk.capitalize()} ✅\n\nPara qual turno deseja transferir?", sid)
+        return ok(f"Turno atual: {tk.capitalize()} \n\nPara qual turno deseja transferir?", sid)
 
     if state == "trhorario.turno_desejado":
         tk = detectar_turno(p)
@@ -472,11 +591,11 @@ async def chat(request: ChatRequest) -> ChatResponse:
             session["context"] = {}
             session["expects_more"] = True
             return ok(
-                "✅ Solicitação registrada!\n\n"
+                "Solicitação registrada!\n\n"
                 "Próximos passos:\n1. Compareça à secretaria com documento de identificação\n"
                 "2. Aguarde análise da coordenação (até 5 dias úteis)\n"
                 "3. Acompanhe pelo portal acadêmico\n\n"
-                f"⚠️ {prazo}. Sujeito à disponibilidade de vagas.\n\n"
+                f" {prazo}. Sujeito à disponibilidade de vagas.\n\n"
                 "Posso ajudar com mais alguma coisa?", sid)
         if is_negative(p):
             session["state"] = "idle"
@@ -490,7 +609,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if state == "estagio.await_tipo":
         if any(k in p for k in ["obrigatorio","obrigatório","curricular","1"]):
             info = dados.get("estagio",{}).get("obrigatorio",{})
-            lines = [" Estágio Obrigatório (Curricular):\n",
+            lines = ["Estágio Obrigatório (Curricular):\n",
                      f"• Carga horária: {info.get('carga_horaria','')}",
                      f"• Início: {info.get('quando_iniciar','')}",
                      "\nDocumentos necessários:"]
@@ -502,7 +621,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             return ok(fmt(lines), sid)
         if any(k in p for k in ["nao obrigatorio","não obrigatório","extracurricular","voluntario","2"]):
             info = dados.get("estagio",{}).get("nao_obrigatorio",{})
-            lines = [" Estágio Não Obrigatório (Extracurricular):\n","Requisitos:"]
+            lines = ["Estágio Não Obrigatório (Extracurricular):\n","Requisitos:"]
             for r in info.get("requisitos",[]): lines.append(f"  – {r}")
             lines.append("\nDocumentos necessários:")
             for d in info.get("documentos",[]): lines.append(f"  – {d}")
@@ -513,8 +632,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
             return ok(fmt(lines), sid)
         return ok(
             "Você quer informações sobre:\n\n"
-            "1. Estágio Obrigatório (curricular)\n"
-            "2. Estágio Não Obrigatório (extracurricular)\n\n"
+            "1⃣ Estágio Obrigatório (curricular)\n"
+            "2⃣ Estágio Não Obrigatório (extracurricular)\n\n"
             "Digite 1, 2 ou o nome do tipo.", sid)
 
     # =========================================================================
@@ -533,7 +652,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             return ok(f"Não há dados cadastrados para {mes.capitalize()} ainda. Consulte o portal acadêmico.", sid)
         eventos = dados_mes.get("eventos",[])
         titulo  = dados_mes.get("titulo", mes.capitalize())
-        lines   = [f"📅 {titulo}\n"]
+        lines   = [f" {titulo}\n"]
         for e in eventos: lines.append(f"• {e}")
         lines.append("\nDeseja consultar outro mês? (sim/não)")
         session["state"] = "calendario.outro_mes"
@@ -557,7 +676,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         ctx["disc_curso"] = ck
         session["state"] = "disciplinas.await_semestre"
         return ok(
-            f"Curso: {CURSOS[ck]['nome']} ✅\n\n"
+            f"Curso: {CURSOS[ck]['nome']} \n\n"
             "Qual semestre deseja consultar? (1 a 6)", sid)
 
     if state == "disciplinas.await_semestre":
@@ -584,7 +703,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             lines.append(f"• [{cod}] {materia}")
             lines.append(f"       {professor}")
             if horario != "-- A PREENCHER --":
-                lines.append(f"       🕐 {horario}")
+                lines.append(f"        {horario}")
             lines.append("")
         lines.append("Para detalhes de uma disciplina específica, informe o código ou nome.")
         session["state"] = "idle"
@@ -599,18 +718,18 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if "matricula" in p and "rematricula" not in p:
         if not MATRICULA_ABERTA:
             return ok(
-                " Matrícula na FATEC — Vestibular\n\n"
+                "Matrícula na FATEC — Vestibular\n\n"
                 "As inscrições para o Vestibular FATEC 2026-2 foram encerradas.\n\n"
                 "Para ingressar na Fatec Zona Sul, você precisará aguardar as "
                 "inscrições para o Vestibular 2027-1, com previsão de abertura "
                 "em setembro de 2026 — confira o calendário acadêmico para as datas exatas.\n\n"
-                "📌 Fique atento ao site oficial da FATEC e ao portal acadêmico "
+                "Fique atento ao site oficial da FATEC e ao portal acadêmico "
                 "para não perder o prazo de inscrição!\n\n"
                 "Já é aluno e quer fazer a rematrícula? É só digitar 'rematrícula'.", sid)
         # ── TESTER MODE: inscrições abertas ──────────────────────────────────
         session["state"] = "matricula.course"
         return ok(
-            " Inscrição para o Vestibular FATEC — Modo Tester\n\n"
+            "Inscrição para o Vestibular FATEC — Modo Tester\n\n"
             "As inscrições estão abertas! Vamos iniciar a sua inscrição.\n\n"
             "Qual curso você deseja cursar?" + MENU_CURSOS, sid)
 
@@ -618,7 +737,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if "rematricula" in p:
         session["state"] = "rematricula.ra"
         return ok(
-            " Rematrícula — Alunos Veteranos\n\n"
+            "Rematrícula — Alunos Veteranos\n\n"
             "Vou te ajudar com a rematrícula. Vamos começar pela identificação.\n\n"
             "Por favor, informe seu RA (Registro Acadêmico):", sid)
 
@@ -664,17 +783,17 @@ async def chat(request: ChatRequest) -> ChatResponse:
     if any(k in p for k in ["calendario","calend","datas","data importante"]):
         session["state"] = "calendario.await_mes"
         return ok(
-            " Calendário Acadêmico da Fatec Zona Sul\n\n"
+            "Calendário Acadêmico da Fatec Zona Sul\n\n"
             "Tenho as datas de Janeiro a Dezembro de 2026.\n\n"
             "Qual mês você deseja consultar?", sid)
 
     # Estágio
     if any(k in p for k in ["estagio","estagiar","estagios","estágio"]):
         info = dados.get("estagio",{})
-        lines = [f"🎓 {info.get('descricao','Estágios')}\n",
+        lines = [f" {info.get('descricao','Estágios')}\n",
                  "Você quer informações sobre:\n",
-                 "1. Estágio Obrigatório (curricular)",
-                 "2. Estágio Não Obrigatório (extracurricular)\n",
+                 "1⃣ Estágio Obrigatório (curricular)",
+                 "2⃣ Estágio Não Obrigatório (extracurricular)\n",
                  "Digite 1, 2 ou o nome do tipo."]
         session["state"] = "estagio.await_tipo"
         return ok(fmt(lines), sid)
@@ -689,14 +808,14 @@ async def chat(request: ChatRequest) -> ChatResponse:
         horario   = info.get("horario","-- A PREENCHER --")
         sala      = info.get("sala","-- A PREENCHER --")
         if any(k in p for k in ["professor","quem","ministra","leciona","responsavel"]):
-            return ok(f"👨‍🏫 {materia} ({cod})\n{professor}", sid)
+            return ok(f" {materia} ({cod})\n{professor}", sid)
         if any(k in p for k in ["horario","hora","aula"]):
-            return ok(f"🕐 {materia} ({cod}): {horario}", sid)
+            return ok(f" {materia} ({cod}): {horario}", sid)
         if any(k in p for k in ["ementa","conteudo","objetivo"]):
             return ok("Solicite a ementa na secretaria presencial ou por e-mail institucional. Prazo: até 5 dias úteis.", sid)
         return ok(
-            f"📚 {materia}\nCódigo: {cod} | Curso: {curso} | {sem}º Semestre\n"
-            f"{professor}\n🕐 Horário: {horario} | 🚪 Sala: {sala}\n\n"
+            f" {materia}\nCódigo: {cod} | Curso: {curso} | {sem}º Semestre\n"
+            f"{professor}\n Horário: {horario} |  Sala: {sala}\n\n"
             "Para a ementa, acesse a secretaria ou envie e-mail institucional.", sid)
 
     # Disciplinas — fluxo por curso/semestre
@@ -707,15 +826,28 @@ async def chat(request: ChatRequest) -> ChatResponse:
         session["state"] = "disciplinas.await_curso"
         return ok(fmt(lines), sid)
 
-    # Fallback Anthropic
-    ctx_str = json.dumps(dados, ensure_ascii=False, indent=2)
-    r_ia = await consultar_claude(ctx_str, request.pergunta)
-    if r_ia:
-        return ok(r_ia, sid, "claude_ai")
+    # ── Motor LLM Generativo (open source) ──────────────────────────────────────
+    # Aqui chegam todas as perguntas que não foram tratadas pelos fluxos estruturados.
+    # O LLM recebe: identidade da FATMA + dados.json completo + histórico da sessão.
+    resposta_llm = await consultar_llm(dados, request.pergunta, history)
+    if resposta_llm:
+        # Salva no histórico para manter contexto nas próximas trocas
+        history.append({"role": "user",      "content": request.pergunta})
+        history.append({"role": "assistant", "content": resposta_llm})
+        # Mantém apenas as últimas N mensagens para não estourar o contexto
+        session["history"] = history[-LLM_HISTORY_MAX:]
+        return ok(resposta_llm, sid, f"llm_{LLM_PROVIDER}")
 
-    # Fallback local
-    return ok(MENU_AJUDA.replace("Claro! ","Não identifiquei sua solicitação. "), sid, "fallback_local")
+    # ── Fallback estático (LLM indisponível) ─────────────────────────────────────
+    return ok(MENU_AJUDA.replace("Claro! ", "Não identifiquei sua solicitação. "), sid, "fallback_local")
 
 
 @app.get("/health")
-async def health(): return {"status":"ok","version":"4.1.0"}
+async def health():
+    return {
+        "status":       "ok",
+        "version":      "5.0.0",
+        "llm_provider": LLM_PROVIDER,
+        "llm_model":    OLLAMA_MODEL if LLM_PROVIDER == "ollama" else
+                        GROQ_MODEL  if LLM_PROVIDER == "groq"   else HF_MODEL,
+    }
